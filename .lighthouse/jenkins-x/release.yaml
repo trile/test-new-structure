@@ -1,0 +1,76 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  creationTimestamp: null
+  name: release
+spec:
+  pipelineSpec:
+    tasks:
+      - name: python-app-build
+        taskSpec:
+          steps:
+            - image: uses:.lighthouse/jenkins-x/python/release.yaml
+      - name: javascript-app-build
+        taskSpec:
+          steps:
+            - image: uses:.lighthouse/jenkins-x/javascript/release.yaml
+      - name: python-batch-process-app-build
+        taskSpec:
+          steps:
+            - image: uses:.lighthouse/jenkins-x/python/release_batch.yaml
+      - name: promote-and-deploy
+        runAfter:
+          - python-app-build
+          - javascript-app-build
+          - python-batch-process-app-build
+        taskSpec:
+          stepTemplate:
+            image: uses:jenkins-x/jx3-pipeline-catalog/tasks/python/release.yaml@versionStream
+            workingDir: /workspace/source
+          steps:
+            - image: uses:jenkins-x/jx3-pipeline-catalog/tasks/git-clone/git-clone.yaml@versionStream
+              name: ""
+            - name: next-version
+              resources: { }
+            - name: jx-variables
+              resources: { }
+            - name: promote-changelog
+              image: ghcr.io/jenkins-x/jx-changelog:0.0.47
+              resources: { }
+              script: |
+                #!/usr/bin/env sh
+                
+                echo "DOCKER_REGISTRY_ORG='ai-dev'" >> .jx/variables.sh
+                
+                source .jx/variables.sh
+                for dir in charts/*/; do
+                path=${dir%/}
+                APP_DIR_NAME="${path##*/}"
+                jx gitops yset -p version -v "$VERSION" -f ./charts/$APP_DIR_NAME/Chart.yaml
+                jx gitops yset -p appVersion -v "$VERSION" -f ./charts/$APP_DIR_NAME/Chart.yaml
+                jx gitops yset -p 'image.repository' -v $DOCKER_REGISTRY/$DOCKER_REGISTRY_ORG/$APP_DIR_NAME -f ./charts/$APP_DIR_NAME/values.yaml
+                jx gitops yset -p 'image.tag' -v "$VERSION" -f ./charts/$APP_DIR_NAME/values.yaml
+                done
+
+                git add * || true
+                git commit -a -m "chore: release $VERSION" --allow-empty
+                echo "completed git commit"
+                git tag -fa v$VERSION -m "Release version $VERSION"
+                git push --force origin v$VERSION
+                echo "completed git push"
+                jx changelog create --version v${VERSION}
+            - name: promote-helm-release
+              resources: { }
+            - name: promote-jx-promote
+              image: ghcr.io/jenkins-x-plugins/jx-promote:0.1.0
+              resources: { }
+              script: |
+                #!/usr/bin/env sh
+                source .jx/variables.sh
+                jx promote --app test-new-structure-api --version $VERSION -b --all --timeout 1h
+                jx promote --app test-new-structure-ui --version $VERSION -b --all --timeout 1h
+                jx promote --app test-new-structure-batch-process --version $VERSION -b --all --timeout 1h
+  podTemplate: {}
+  serviceAccountName: tekton-bot
+  timeout: 12h0m0s
+status: {}

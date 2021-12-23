@@ -1,0 +1,6 @@
+apiVersion: v2
+name: test-new-structure-batch-process
+version: "0.0.1"
+description: Batch Process App for test-new-structure
+appVersion: "0.0.1"
+type: application
