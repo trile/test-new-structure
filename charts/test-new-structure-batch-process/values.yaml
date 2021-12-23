@@ -4,24 +4,19 @@
 podAnnotations: {}
 # Add labels to the pods
 podsLabels: {}
-
 image:
-  repository: draft
-  tag: dev
+  repository: 733647232589.dkr.ecr.us-west-2.amazonaws.com/ai-dev/test-new-structure-batch-process
+  tag: 0.0.1
   pullPolicy: Always
-
 # optional list of image pull secrets to use to pull images
 jx:
   # optional image pull secrets
   imagePullSecrets: []
-
   # whether to create a Release CRD when installing charts with Release CRDs included
   releaseCRD: true
-
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
-
 # define common environment variables
 # for example AWS credentials
 # commonEnv:
@@ -41,13 +36,11 @@ cronjob:
   schedule: "*/5 * * * *"
   failedJobsHistoryLimit: 0
   successfulJobsHistoryLimit: 0
-
 serviceAccount:
   enabled: false
   name: ""
   annotations: {}
   labels: {}
-
 resources:
   limits:
     cpu: 100m
