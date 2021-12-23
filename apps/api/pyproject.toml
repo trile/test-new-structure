@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "test_new_structure_api"
+version = "0.0.1"
+description = ""
+authors = [" <>"]
+
+[tool.poetry.dependencies]
+python = "3.9.7"
+
+h1st = "0.0.5"
+Django = "^3.2.7"
+djangorestframework = "^3.12.4"
+django-cors-headers = "^3.7.0"
+django-environ = "^0.7.0"
+uritemplate = "^3.0.1"
+
+gunicorn = "^20.1.0"
+
+[tool.poetry.dev-dependencies]
+pylint = "^2.10.2"
+pre-commit = "^2.15.0"
+commitizen = "^2.18.1"
+pytest = "^6.2.4"
+pylint-django = "2.3.0" # workaround for https://github.com/PyCQA/pylint-django/issues/309
+pytest-django = "^4.4.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pylint.format]
+# Maximum number of characters on a single line.
+max-line-length = 120
+
+[tool.pylint.design]
+max-parents = 15
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
